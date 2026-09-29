@@ -71,15 +71,35 @@ This repository provides an end-to-end robotics learning platform and reference 
 ## <a id="system-architecture" name="system-architecture"></a>🏗️ System Architecture
 
 ```mermaid
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'darkMode': true,
+    'background': '#0d1117',
+    'primaryColor': '#161b22',
+    'primaryTextColor': '#c9d1d9',
+    'primaryBorderColor': '#30363d',
+    'lineColor': '#58a6ff',
+    'secondaryColor': '#0d1117',
+    'tertiaryColor': '#161b22',
+    'mainBkg': '#0d1117',
+    'nodeBorder': '#30363d',
+    'clusterBkg': '#161b22',
+    'clusterBorder': '#30363d',
+    'titleColor': '#58a6ff',
+    'edgeLabelBackground': '#0d1117',
+    'fontSize': '13px'
+  }
+}}%%
 flowchart TD
-    %% Global Styling Classes
-    classDef inNode fill:#161b22,stroke:#58a6ff,stroke-width:1.5px,color:#c9d1d9;
-    classDef muxNode fill:#21262d,stroke:#bc8cff,stroke-width:1.5px,color:#d2a8ff;
-    classDef safeNode fill:#2d1b22,stroke:#f85149,stroke-width:1.5px,color:#ffa198;
-    classDef ctrlNode fill:#162b20,stroke:#3fb950,stroke-width:1.5px,color:#7ee787;
-    classDef simNode fill:#1c2d3d,stroke:#388bfd,stroke-width:1.5px,color:#79c0ff;
-    classDef hwNode fill:#332515,stroke:#d29922,stroke-width:1.5px,color:#e3b341;
-    classDef vizNode fill:#21262d,stroke:#8b949e,stroke-width:1.5px,color:#c9d1d9;
+    %% Custom Styling Classes for Dark Aesthetic
+    classDef inNode fill:#131d2e,stroke:#388bfd,stroke-width:1.5px,color:#79c0ff;
+    classDef muxNode fill:#221833,stroke:#bc8cff,stroke-width:1.5px,color:#d2a8ff;
+    classDef safeNode fill:#33141a,stroke:#f85149,stroke-width:1.5px,color:#ffa198;
+    classDef ctrlNode fill:#12281e,stroke:#3fb950,stroke-width:1.5px,color:#7ee787;
+    classDef simNode fill:#102436,stroke:#58a6ff,stroke-width:1.5px,color:#a5d6ff;
+    classDef hwNode fill:#2d1f0d,stroke:#d29922,stroke-width:1.5px,color:#e3b341;
+    classDef vizNode fill:#1c2128,stroke:#8b949e,stroke-width:1.5px,color:#f0f6fc;
 
     subgraph IN["1. Command & Sensor Inputs"]
         JOY["🎮 Gamepad [/joy -> /joy_vel | Priority 99]"]:::inNode
@@ -88,33 +108,33 @@ flowchart TD
         LIDAR["📡 2D LiDAR Scanner [/scan]"]:::inNode
     end
 
-    subgraph ARB["2. Velocity Arbitration & Safety Layer"]
-        TMUX["🔀 twist_mux (Priority Arbitrator)"]:::muxNode
-        SAFE["🛡️ safety_zone_controller [C++ / Python]<br/>(Red: Stop 0.45m | Yellow: Slow 0.90m)"]:::safeNode
+    subgraph ARB["2. Velocity Arbitration & Active Safety Layer"]
+        TMUX["🔀 twist_mux [Priority Arbitrator]"]:::muxNode
+        SAFE["🛡️ safety_zone_controller [C++ / Python]<br/>(Red Stop: 0.45m | Yellow Slowdown: 0.90m)"]:::safeNode
     end
 
-    subgraph CTRL["3. Kinematics & Odometry Layer"]
-        R2C["⚙️ ros2_control (DiffDriveController)"]:::ctrlNode
-        DIFF["⚡ Custom Kinematics Controller [C++ / Python]<br/>(Forward & Inverse Kinematics)"]:::ctrlNode
-        ODOM["📊 Runge-Kutta 2D Odometry Engine<br/>(/odom Topic & TF odom -> base_footprint)"]:::ctrlNode
+    subgraph CTRL["3. Kinematics, Control & Odometry Engine"]
+        R2C["⚙️ ros2_control [DiffDriveController]"]:::ctrlNode
+        DIFF["⚡ Custom Kinematics Controller [C++ / Python]<br/>(Forward / Inverse Kinematics)"]:::ctrlNode
+        ODOM["📊 Runge-Kutta 2D Odometry Engine<br/>(/odom Topic & TF: odom -> base_footprint)"]:::ctrlNode
     end
 
     subgraph TARGETS["4. Dual Execution Targets"]
-        subgraph SIM["Track 1: Simulation Environments"]
-            GZ["🌐 Gazebo Classic 11 / Ignition / Modern Gz"]:::simNode
+        subgraph SIM["Track 1: Multi-Simulator Environments"]
+            GZ["🌐 Gazebo Classic 11 / Ignition Fortress / Modern Gz"]:::simNode
         end
-        subgraph HW["Track 2: Physical Hardware (Raspberry Pi 4/5)"]
-            BRIDGE["🔌 serial_hardware_bridge.py (Mock Fallback)"]:::hwNode
-            MCU["⚡ Arduino Uno / ESP32 Firmware"]:::hwNode
-            MOTORS["🏎️ 4x DC Motors + Encoders + L298N Driver"]:::hwNode
+        subgraph HW["Track 2: Physical Embedded Hardware (Raspberry Pi 4/5)"]
+            BRIDGE["🔌 serial_hardware_bridge.py [Mock Fallback]"]:::hwNode
+            MCU["⚡ Arduino Uno / ESP32 Firmware [115.2k Baud UART]"]:::hwNode
+            MOTORS["🏎️ 4x DC Motors + Quadrature Encoders + L298N"]:::hwNode
         end
     end
 
-    subgraph VIZ["5. Live 3D Visualizer"]
-        RVIZ["📊 RViz2 (Model, LaserScan, Markers, TF)"]:::vizNode
+    subgraph VIZ["5. Live 3D Diagnostics Visualizer"]
+        RVIZ["📊 RViz2 Live Visualizer [Model, LaserScan, Safety Cylinders, TF]"]:::vizNode
     end
 
-    %% Routing & Dataflow
+    %% Dataflow & Topic Routing
     JOY --> TMUX
     KEY --> TMUX
     NAV --> TMUX
@@ -123,15 +143,15 @@ flowchart TD
     SAFE -.->|"/safety_stop [E-Stop Lock]"| TMUX
     SAFE -->|"/safety_zone_markers"| RVIZ
     
-    SAFE -->|"/cmd_vel [Safe]"| R2C
-    SAFE -->|"/cmd_vel [Safe]"| DIFF
+    SAFE -->|"/cmd_vel [Safe Speed]"| R2C
+    SAFE -->|"/cmd_vel [Safe Speed]"| DIFF
 
     R2C --> GZ
     DIFF --> ODOM
     ODOM --> RVIZ
     DIFF -->|"/wheel_speed_commands"| BRIDGE
-    BRIDGE <-->|"115200 Baud UART (PWM & Ticks)"| MCU
-    MCU <-->|"PWM Signals & Interrupts"| MOTORS
+    BRIDGE <-->|"UART: L:pwm,R:pwm & E:ticks"| MCU
+    MCU <-->|"PWM Signals & GPIO Interrupts"| MOTORS
 ```
 
 ---
