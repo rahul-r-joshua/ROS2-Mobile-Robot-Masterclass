@@ -82,10 +82,10 @@ flowchart TD
     classDef vizNode fill:#21262d,stroke:#8b949e,stroke-width:1.5px,color:#c9d1d9;
 
     subgraph IN["1. Command & Sensor Inputs"]
-        JOY["🎮 Gamepad (/joy -> /joy_vel | Priority 99)"]:::inNode
-        KEY["⌨️ Keyboard (/cmd_vel_key | Priority 90)"]:::inNode
-        NAV["🧭 Autonomous Nav (/nav_vel | Priority 50)"]:::inNode
-        LIDAR["📡 2D LiDAR Scanner (/scan)"]:::inNode
+        JOY["🎮 Gamepad [/joy -> /joy_vel | Priority 99]"]:::inNode
+        KEY["⌨️ Keyboard [/cmd_vel_key | Priority 90]"]:::inNode
+        NAV["🧭 Autonomous Nav [/nav_vel | Priority 50]"]:::inNode
+        LIDAR["📡 2D LiDAR Scanner [/scan]"]:::inNode
     end
 
     subgraph ARB["2. Velocity Arbitration & Safety Layer"]
@@ -115,20 +115,23 @@ flowchart TD
     end
 
     %% Routing & Dataflow
-    JOY & KEY & NAV --> TMUX
-    TMUX -->|/cmd_vel_raw| SAFE
+    JOY --> TMUX
+    KEY --> TMUX
+    NAV --> TMUX
+    TMUX -->|"/cmd_vel_raw"| SAFE
     LIDAR --> SAFE
-    SAFE -.->|/safety_stop (E-Stop Lock)| TMUX
-    SAFE -->|/safety_zone_markers| RVIZ
+    SAFE -.->|"/safety_stop [E-Stop Lock]"| TMUX
+    SAFE -->|"/safety_zone_markers"| RVIZ
     
-    SAFE -->|/cmd_vel (Safe)| R2C
-    SAFE -->|/cmd_vel (Safe)| DIFF
+    SAFE -->|"/cmd_vel [Safe]"| R2C
+    SAFE -->|"/cmd_vel [Safe]"| DIFF
 
     R2C --> GZ
-    DIFF --> ODOM --> RVIZ
-    DIFF -->|/wheel_speed_commands| BRIDGE
-    BRIDGE <-->|115200 Baud UART (L:pwm,R:pwm & E:ticks,I:imu)| MCU
-    MCU <-->|PWM Signals & Hardware Interrupts| MOTORS
+    DIFF --> ODOM
+    ODOM --> RVIZ
+    DIFF -->|"/wheel_speed_commands"| BRIDGE
+    BRIDGE <-->|"115200 Baud UART (PWM & Ticks)"| MCU
+    MCU <-->|"PWM Signals & Interrupts"| MOTORS
 ```
 
 ---
