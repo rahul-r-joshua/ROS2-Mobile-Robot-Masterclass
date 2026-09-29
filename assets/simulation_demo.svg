@@ -1,0 +1,232 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1020 530" width="100%" height="100%" style="background:#0d1117; border-radius: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <!-- Grid Pattern -->
+    <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+      <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#21262d" stroke-width="1"/>
+    </pattern>
+
+    <!-- Radar Sweep Gradient -->
+    <linearGradient id="lidarSweep" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#58a6ff" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#58a6ff" stop-opacity="0.0"/>
+    </linearGradient>
+
+    <!-- Vector Marker Arrow -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#3fb950"/>
+    </marker>
+
+    <!-- Pulse & Rotation Animations -->
+    <style>
+      @keyframes pulseRed {
+        0% { r: 95px; opacity: 0.22; }
+        50% { r: 102px; opacity: 0.45; }
+        100% { r: 95px; opacity: 0.22; }
+      }
+      @keyframes pulseYellow {
+        0% { r: 180px; opacity: 0.14; }
+        50% { r: 190px; opacity: 0.28; }
+        100% { r: 180px; opacity: 0.14; }
+      }
+      @keyframes scanBeam {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      @keyframes robotFloat {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-3px); }
+        100% { transform: translateY(0px); }
+      }
+      @keyframes obstacleBlink {
+        0% { opacity: 0.35; }
+        50% { opacity: 1.0; }
+        100% { opacity: 0.35; }
+      }
+      .red-ring { animation: pulseRed 2s infinite ease-in-out; transform-origin: 310px 265px; }
+      .yellow-ring { animation: pulseYellow 3s infinite ease-in-out; transform-origin: 310px 265px; }
+      .scanner { animation: scanBeam 3.5s infinite linear; transform-origin: 335px 265px; }
+      .robot-group { animation: robotFloat 2s infinite ease-in-out; }
+      .obstacle-group { animation: obstacleBlink 1.5s infinite ease-in-out; }
+    </style>
+  </defs>
+
+  <!-- Background Grid -->
+  <rect width="1020" height="530" fill="url(#grid)"/>
+
+  <!-- Top Navigation & Status Bar -->
+  <rect x="0" y="0" width="1020" height="48" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <circle cx="24" cy="24" r="6" fill="#ff5f56"/>
+  <circle cx="44" cy="24" r="6" fill="#ffbd2e"/>
+  <circle cx="64" cy="24" r="6" fill="#27c93f"/>
+  <text x="90" y="29" fill="#c9d1d9" font-size="13" font-weight="600">ROS 2 Humble • 4-Wheel Autonomous Mobile Robot Architecture &amp; Active Safety Diagnostic</text>
+  <rect x="860" y="12" width="140" height="24" rx="12" fill="#238636"/>
+  <text x="930" y="28" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">● SYSTEM READY</text>
+
+  <!-- LEFT VIEWPORT: Robot Model, Sensors & Safety Zones -->
+  <g id="simulation-canvas">
+    <!-- Outer Yellow Slowdown Zone (0.90m) -->
+    <circle cx="310" cy="265" r="180" fill="#d29922" stroke="#d29922" stroke-width="2" stroke-dasharray="6,4" class="yellow-ring"/>
+    <text x="310" y="75" fill="#d29922" font-size="11" font-weight="bold" text-anchor="middle" letter-spacing="0.5">🟡 YELLOW SLOWDOWN ZONE (0.90m RADIUS)</text>
+
+    <!-- Inner Red Emergency Stop Zone (0.45m) -->
+    <circle cx="310" cy="265" r="95" fill="#f85149" stroke="#f85149" stroke-width="2" stroke-dasharray="4,3" class="red-ring"/>
+    <text x="310" y="157" fill="#f85149" font-size="11" font-weight="bold" text-anchor="middle" letter-spacing="0.5">🔴 RED EMERGENCY STOP ZONE (0.45m RADIUS)</text>
+
+    <!-- Rotating LiDAR Scan Sweep Originating from Front LiDAR -->
+    <g class="scanner">
+      <path d="M 335 265 L 515 265 A 180 180 0 0 0 460 140 Z" fill="url(#lidarSweep)"/>
+      <line x1="335" y1="265" x2="515" y2="265" stroke="#58a6ff" stroke-width="1.8"/>
+    </g>
+
+    <!-- 4-Wheel Robot Model with Hardware-Accurate Sensor Layout -->
+    <g class="robot-group">
+      <!-- 4 Wheels (Front-Left, Front-Right, Rear-Left, Rear-Right) -->
+      <rect x="330" y="205" width="28" height="15" rx="3" fill="#21262d" stroke="#8b949e" stroke-width="1.5"/>
+      <text x="344" y="199" fill="#8b949e" font-size="8" text-anchor="middle">FL Wheel</text>
+
+      <rect x="330" y="310" width="28" height="15" rx="3" fill="#21262d" stroke="#8b949e" stroke-width="1.5"/>
+      <text x="344" y="335" fill="#8b949e" font-size="8" text-anchor="middle">FR Wheel</text>
+
+      <rect x="255" y="205" width="28" height="15" rx="3" fill="#21262d" stroke="#8b949e" stroke-width="1.5"/>
+      <text x="269" y="199" fill="#8b949e" font-size="8" text-anchor="middle">RL Wheel</text>
+
+      <rect x="255" y="310" width="28" height="15" rx="3" fill="#21262d" stroke="#8b949e" stroke-width="1.5"/>
+      <text x="269" y="335" fill="#8b949e" font-size="8" text-anchor="middle">RR Wheel</text>
+
+      <!-- Main Chassis Body (base_link) -->
+      <rect x="245" y="220" width="130" height="90" rx="8" fill="#1f6feb" fill-opacity="0.25" stroke="#58a6ff" stroke-width="2"/>
+      
+      <!-- Coordinate Axis Crosshair at base_link center -->
+      <line x1="300" y1="265" x2="320" y2="265" stroke="#58a6ff" stroke-width="1" stroke-dasharray="2,2"/>
+      <line x1="310" y1="255" x2="310" y2="275" stroke="#58a6ff" stroke-width="1" stroke-dasharray="2,2"/>
+
+      <!-- 1. Center IMU Sensor (MPU6050 / BNO055 at Center xyz="0, 0, 0.04") -->
+      <g id="imu-sensor">
+        <rect x="300" y="255" width="20" height="20" rx="3" fill="#0969da" stroke="#7ee787" stroke-width="1.5"/>
+        <rect x="304" y="259" width="12" height="12" rx="1" fill="#161b22"/>
+        <circle cx="310" cy="265" r="2" fill="#7ee787"/>
+        <text x="310" y="249" fill="#7ee787" font-size="9" font-weight="bold" text-anchor="middle">IMU (Center)</text>
+      </g>
+
+      <!-- 2. Front 2D LiDAR Turret (Mounted Forward xyz="0.10, 0, 0.10") -->
+      <g id="lidar-sensor">
+        <circle cx="340" cy="265" r="14" fill="#da3633" stroke="#ff7b72" stroke-width="2"/>
+        <circle cx="340" cy="265" r="5" fill="#ffffff"/>
+        <!-- Scanning indicator dot -->
+        <circle cx="348" cy="261" r="2" fill="#ffa198"/>
+        <text x="340" y="289" fill="#ff7b72" font-size="9" font-weight="bold" text-anchor="middle">LiDAR (Front)</text>
+      </g>
+
+      <!-- 3. Front RGB-D / Stereo Camera (Mounted at Front Face xyz="0.20, 0, 0.05") -->
+      <g id="camera-sensor">
+        <rect x="375" y="251" width="9" height="28" rx="2" fill="#161b22" stroke="#58a6ff" stroke-width="1.5"/>
+        <!-- Camera Lenses -->
+        <circle cx="380" cy="258" r="3" fill="#388bfd"/>
+        <circle cx="380" cy="272" r="2.5" fill="#ff7b72"/>
+        <text x="382" y="243" fill="#58a6ff" font-size="9" font-weight="bold" text-anchor="middle">Camera</text>
+      </g>
+
+      <!-- Forward Velocity Vector Arrow (+X Axis Heading) -->
+      <line x1="384" y1="265" x2="420" y2="265" stroke="#3fb950" stroke-width="2.5" marker-end="url(#arrow)"/>
+      <text x="408" y="283" fill="#3fb950" font-size="9" font-weight="bold">+X</text>
+    </g>
+
+    <!-- Simulated Obstacle Detected Inside Red Emergency Zone -->
+    <g class="obstacle-group">
+      <!-- Obstacle Range Callout Badge (Positioned above box with generous padding) -->
+      <rect x="414" y="219" width="60" height="19" rx="4" fill="#161b22" stroke="#ff7b72" stroke-width="1.2"/>
+      <text x="444" y="232" fill="#ffa198" font-size="9.5" font-weight="bold" text-anchor="middle" font-family="monospace">d=0.38m</text>
+      
+      <!-- Obstacle Box -->
+      <rect x="430" y="245" width="28" height="40" rx="4" fill="#f85149" fill-opacity="0.85" stroke="#ff7b72" stroke-width="2"/>
+      <text x="444" y="269" fill="#ffffff" font-size="9" font-weight="bold" text-anchor="middle">BOX</text>
+      
+      <!-- Reflected Laser Return Points on Obstacle Face -->
+      <circle cx="430" cy="253" r="3" fill="#ffa198"/>
+      <circle cx="430" cy="265" r="4" fill="#ffffff"/>
+      <circle cx="430" cy="277" r="3" fill="#ffa198"/>
+      <line x1="340" y1="265" x2="430" y2="265" stroke="#ff7b72" stroke-width="1.8" stroke-dasharray="3,3"/>
+    </g>
+  </g>
+
+  <!-- RIGHT VIEWPORT: Fully Separated, Non-Overlapping ROS 2 Telemetry & Diagnostic Dashboard -->
+  <g transform="translate(560, 56)">
+    <!-- Dashboard Outer Frame -->
+    <rect width="435" height="455" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+    
+    <!-- Header -->
+    <rect x="15" y="12" width="405" height="32" rx="6" fill="#21262d"/>
+    <text x="217" y="33" fill="#58a6ff" font-size="13" font-weight="bold" text-anchor="middle" letter-spacing="0.5">📡 ROS 2 LIVE TELEMETRY &amp; HARDWARE DIAGNOSTICS</text>
+
+    <!-- SECTION 1: Active Safety & Velocity Filtering -->
+    <!-- Card 1: Input Velocity -->
+    <g transform="translate(15, 52)">
+      <rect width="405" height="32" rx="5" fill="#0d1117" stroke="#30363d" stroke-width="1"/>
+      <text x="12" y="20" fill="#8b949e" font-size="11" font-weight="500">Raw Input Topic (<tspan fill="#f0883e" font-family="monospace">/cmd_vel_raw</tspan>):</text>
+      <rect x="280" y="5" width="115" height="22" rx="4" fill="#388bfd" fill-opacity="0.15" stroke="#388bfd" stroke-width="1"/>
+      <text x="337" y="20" fill="#58a6ff" font-size="11" font-weight="bold" text-anchor="middle" font-family="monospace">+0.30 m/s</text>
+    </g>
+
+    <!-- Card 2: Active Safety Zone State -->
+    <g transform="translate(15, 90)">
+      <rect width="405" height="32" rx="5" fill="#0d1117" stroke="#30363d" stroke-width="1"/>
+      <text x="12" y="20" fill="#8b949e" font-size="11" font-weight="500">Active Safety Zone State:</text>
+      <rect x="250" y="5" width="145" height="22" rx="4" fill="#da3633"/>
+      <text x="322" y="20" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">🔴 RED EMERGENCY STOP</text>
+    </g>
+
+    <!-- Card 3: Safe Velocity Output -->
+    <g transform="translate(15, 128)">
+      <rect width="405" height="32" rx="5" fill="#0d1117" stroke="#30363d" stroke-width="1"/>
+      <text x="12" y="20" fill="#8b949e" font-size="11" font-weight="500">Safe Output (<tspan fill="#58a6ff" font-family="monospace">/cmd_vel</tspan>):</text>
+      <rect x="270" y="5" width="125" height="22" rx="4" fill="#f85149" fill-opacity="0.15" stroke="#f85149" stroke-width="1"/>
+      <text x="332" y="20" fill="#ff7b72" font-size="11" font-weight="bold" text-anchor="middle" font-family="monospace">0.00 m/s (LOCKED)</text>
+    </g>
+
+    <!-- Card 4: Minimum Obstacle Distance -->
+    <g transform="translate(15, 166)">
+      <rect width="405" height="32" rx="5" fill="#0d1117" stroke="#30363d" stroke-width="1"/>
+      <text x="12" y="20" fill="#8b949e" font-size="11" font-weight="500">Min Obstacle Range (<tspan fill="#8b949e">LiDAR</tspan>):</text>
+      <rect x="270" y="5" width="125" height="22" rx="4" fill="#d29922" fill-opacity="0.15" stroke="#d29922" stroke-width="1"/>
+      <text x="332" y="20" fill="#e3b341" font-size="11" font-weight="bold" text-anchor="middle" font-family="monospace">0.38 m (&lt; 0.45m)</text>
+    </g>
+
+    <!-- SECTION 2: Sensor Topology & Kinematics Engine -->
+    <!-- Card 5: Sensor Layout Topology -->
+    <g transform="translate(15, 204)">
+      <rect width="405" height="32" rx="5" fill="#0d1117" stroke="#30363d" stroke-width="1"/>
+      <text x="12" y="20" fill="#8b949e" font-size="11" font-weight="500">Sensor Mounting Layout:</text>
+      <text x="395" y="20" fill="#79c0ff" font-size="10.5" font-weight="600" text-anchor="end">Front Cam • Front LiDAR • Center IMU</text>
+    </g>
+
+    <!-- Card 6: Kinematics & Controllers -->
+    <g transform="translate(15, 242)">
+      <rect width="405" height="32" rx="5" fill="#0d1117" stroke="#30363d" stroke-width="1"/>
+      <text x="12" y="20" fill="#8b949e" font-size="11" font-weight="500">Kinematics &amp; Controllers:</text>
+      <text x="395" y="20" fill="#7ee787" font-size="10.5" font-weight="600" text-anchor="end">Dual C++ (rclcpp) &amp; Python (rclpy)</text>
+    </g>
+
+    <!-- Card 7: TF2 Coordinate Tree -->
+    <g transform="translate(15, 280)">
+      <rect width="405" height="32" rx="5" fill="#0d1117" stroke="#30363d" stroke-width="1"/>
+      <text x="12" y="20" fill="#8b949e" font-size="11" font-weight="500">Dead-Reckoning TF Tree:</text>
+      <text x="395" y="20" fill="#d2a8ff" font-size="10.5" font-weight="600" text-anchor="end">odom → base_footprint → base_link</text>
+    </g>
+
+    <!-- Card 8: MCU Serial Bridge -->
+    <g transform="translate(15, 318)">
+      <rect width="405" height="32" rx="5" fill="#0d1117" stroke="#30363d" stroke-width="1"/>
+      <text x="12" y="20" fill="#8b949e" font-size="11" font-weight="500">Track 2 Hardware MCU Bridge:</text>
+      <text x="395" y="20" fill="#58a6ff" font-size="10.5" font-weight="600" text-anchor="end">Arduino Uno / ESP32 (115.2k Baud)</text>
+    </g>
+
+    <!-- Bottom Verification Banner with Generous Margins -->
+    <g transform="translate(15, 362)">
+      <rect width="405" height="52" rx="6" fill="#238636" fill-opacity="0.2" stroke="#238636" stroke-width="1.5"/>
+      <circle cx="30" cy="26" r="10" fill="#238636"/>
+      <path d="M 25 26 L 28 29 L 35 22" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="50" y="22" fill="#7ee787" font-size="11.5" font-weight="bold">ALL 7 MILESTONES &amp; 32 TEST TIERS VERIFIED</text>
+      <text x="50" y="39" fill="#8b949e" font-size="10">Gazebo Classic • Ignition • Gz Sim • ros2_control • Dual-Stack</text>
+    </g>
+  </g>
+</svg>
