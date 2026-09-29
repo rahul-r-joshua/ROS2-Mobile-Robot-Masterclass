@@ -78,7 +78,7 @@ This repository provides an end-to-end robotics learning platform and reference 
     'background': '#0d1117',
     'mainBkg': '#0d1117',
     'primaryColor': '#161b22',
-    'primaryTextColor': '#c9d1d9',
+    'primaryTextColor': '#f0f6fc',
     'primaryBorderColor': '#30363d',
     'lineColor': '#58a6ff',
     'secondaryColor': '#0d1117',
@@ -88,19 +88,19 @@ This repository provides an end-to-end robotics learning platform and reference 
     'clusterBorder': '#30363d',
     'titleColor': '#58a6ff',
     'edgeLabelBackground': '#0d1117',
-    'fontSize': '14px',
+    'fontSize': '16px',
     'fontFamily': '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif'
   }
 }}%%
 flowchart TD
-    %% Global Styling Classes
-    classDef inNode fill:#161b22,stroke:#58a6ff,stroke-width:1.5px,color:#c9d1d9;
-    classDef muxNode fill:#21262d,stroke:#bc8cff,stroke-width:1.5px,color:#d2a8ff;
-    classDef safeNode fill:#2d1b22,stroke:#f85149,stroke-width:1.5px,color:#ffa198;
-    classDef ctrlNode fill:#162b20,stroke:#3fb950,stroke-width:1.5px,color:#7ee787;
-    classDef simNode fill:#1c2d3d,stroke:#388bfd,stroke-width:1.5px,color:#79c0ff;
-    classDef hwNode fill:#332515,stroke:#d29922,stroke-width:1.5px,color:#e3b341;
-    classDef vizNode fill:#21262d,stroke:#8b949e,stroke-width:1.5px,color:#c9d1d9;
+    %% Global Styling Classes with Enhanced Typography
+    classDef inNode fill:#161b22,stroke:#58a6ff,stroke-width:1.8px,color:#79c0ff,font-size:15px,font-weight:600;
+    classDef muxNode fill:#21262d,stroke:#bc8cff,stroke-width:1.8px,color:#d2a8ff,font-size:15px,font-weight:600;
+    classDef safeNode fill:#2d1b22,stroke:#f85149,stroke-width:1.8px,color:#ffa198,font-size:15px,font-weight:600;
+    classDef ctrlNode fill:#162b20,stroke:#3fb950,stroke-width:1.8px,color:#7ee787,font-size:15px,font-weight:600;
+    classDef simNode fill:#1c2d3d,stroke:#388bfd,stroke-width:1.8px,color:#a5d6ff,font-size:15px,font-weight:600;
+    classDef hwNode fill:#332515,stroke:#d29922,stroke-width:1.8px,color:#e3b341,font-size:15px,font-weight:600;
+    classDef vizNode fill:#21262d,stroke:#8b949e,stroke-width:1.8px,color:#f0f6fc,font-size:15px,font-weight:600;
 
     subgraph IN["1. Command & Sensor Inputs"]
         JOY["🎮 Gamepad [/joy -> /joy_vel | Priority 99]"]:::inNode
@@ -153,6 +153,14 @@ flowchart TD
     DIFF -->|"/wheel_speed_commands"| BRIDGE
     BRIDGE <-->|"115200 Baud UART (PWM & Ticks)"| MCU
     MCU <-->|"PWM Signals & Interrupts"| MOTORS
+
+    style IN fill:#161b22,stroke:#30363d,stroke-width:1.5px,color:#58a6ff
+    style ARB fill:#161b22,stroke:#30363d,stroke-width:1.5px,color:#bc8cff
+    style CTRL fill:#161b22,stroke:#30363d,stroke-width:1.5px,color:#3fb950
+    style TARGETS fill:#161b22,stroke:#30363d,stroke-width:1.5px,color:#d29922
+    style SIM fill:#0d1117,stroke:#30363d,stroke-width:1px,color:#58a6ff
+    style HW fill:#0d1117,stroke:#30363d,stroke-width:1px,color:#d29922
+    style VIZ fill:#161b22,stroke:#30363d,stroke-width:1.5px,color:#8b949e
 ```
 
 ---
