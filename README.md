@@ -146,7 +146,7 @@ source /opt/ros/humble/setup.bash
 
 ### 2️⃣ Clone this Repository:
 ```bash
-mkdir -p ~/ros2_mobile_robot_ws/src
+mkdir -p ~/ros2_mobile_robot_ws/
 ```
 ```bash
 cd ~/ros2_mobile_robot_ws
