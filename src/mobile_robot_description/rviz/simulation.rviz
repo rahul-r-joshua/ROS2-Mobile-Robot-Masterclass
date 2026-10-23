@@ -192,7 +192,7 @@ Visualization Manager:
     - Class: rviz_default_plugins/Image
       Enabled: true
       Max Value: 1
-      Median window: 0
+      Median window: 5
       Min Value: 0
       Name: Image
       Normalize Range: false

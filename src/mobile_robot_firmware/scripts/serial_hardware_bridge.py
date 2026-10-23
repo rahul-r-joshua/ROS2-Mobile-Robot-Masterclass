@@ -98,7 +98,7 @@ class SerialHardwareBridge(Node):
             self.is_connected = False
             return
 
-        # Check alternative ports if /dev/ttyUSB0 doesn't exist and port hasn't been explicitly specified
+        # Check alternative ports if /dev/ttyUSB0 doesn't exist
         port_to_try = self.port
         if not os.path.exists(port_to_try):
             for alt in ['/dev/ttyACM0', '/dev/ttyUSB1', '/dev/ttyACM1']:
@@ -121,7 +121,7 @@ class SerialHardwareBridge(Node):
                 baudrate=self.baudrate,
                 timeout=0.05
             )
-            time.sleep(0.5)  # Allow bootloader reset
+            time.sleep(1.5)  # Allow bootloader reset
             self.is_connected = True
             self.get_logger().info(f'✅ Connected to Microcontroller on {port_to_try}')
         except Exception as e:
@@ -192,7 +192,7 @@ class SerialHardwareBridge(Node):
                                 gx_val = float(parts[3])
                                 gy_val = float(parts[4])
                                 gz_val = float(parts[5])
-                                
+
                                 if abs(ax_val) > 50 or abs(ay_val) > 50 or abs(az_val) > 50:
                                     # Raw 16-bit counts
                                     imu_msg.linear_acceleration.x = (ax_val / 16384.0) * 9.80665
@@ -222,6 +222,7 @@ class SerialHardwareBridge(Node):
             self.last_mock_time = now
 
             if dt > 0:
+                # ticks = (rad_s * dt / (2 * pi)) * CPR
                 two_pi = 6.28318530718
                 self.mock_left_ticks += (self.last_left_speed * dt / two_pi) * self.encoder_cpr
                 self.mock_right_ticks += (self.last_right_speed * dt / two_pi) * self.encoder_cpr
@@ -230,6 +231,7 @@ class SerialHardwareBridge(Node):
                 msg.data = [int(self.mock_left_ticks), int(self.mock_right_ticks)]
                 self.pub_encoder_ticks.publish(msg)
 
+                # Mock IMU telemetry (gravity on Z, zero angular rate)
                 imu_msg = Imu()
                 imu_msg.header.stamp = now.to_msg()
                 imu_msg.header.frame_id = 'imu_link'

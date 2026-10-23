@@ -66,7 +66,7 @@ private:
   bool has_cmd_vel_;
   int stop_count_;
 
-  // Encoder & Joint Tracking
+  // Encoder & Joint Feedback Tracking
   bool has_encoder_data_;
   bool has_prev_ticks_;
   int32_t prev_left_ticks_;

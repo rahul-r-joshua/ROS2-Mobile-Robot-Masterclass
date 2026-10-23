@@ -9,4 +9,3 @@ twist_mux:
         topic   : safety_stop
         timeout : 0.0
         priority: 200
-

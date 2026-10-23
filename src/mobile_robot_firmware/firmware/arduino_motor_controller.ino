@@ -250,6 +250,7 @@ void sendTelemetry() {
       Serial.println(gz);
     }
   } else if (active_imu == IMU_BNO055) {
+    // Read Linear Accel (0x08) and Gyro (0x14) from BNO055
     Wire.beginTransmission(BNO055_ADDR);
     Wire.write(0x08); // ACC_DATA_X_LSB
     if (Wire.endTransmission(false) == 0 && Wire.requestFrom(BNO055_ADDR, 6, true) == 6) {
