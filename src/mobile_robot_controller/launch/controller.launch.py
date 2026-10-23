@@ -40,6 +40,10 @@ def generate_launch_description():
             LaunchConfiguration('params_file'),
             {'use_sim_time': LaunchConfiguration('use_sim_time')}
         ],
+        remappings=[
+            ('/tf', '/diff_drive/tf'),
+            ('/odom', '/diff_drive/odom')
+        ],
         condition=IfCondition(LaunchConfiguration('use_cpp'))
     )
 
@@ -53,42 +57,17 @@ def generate_launch_description():
             LaunchConfiguration('params_file'),
             {'use_sim_time': LaunchConfiguration('use_sim_time')}
         ],
+        remappings=[
+            ('/tf', '/diff_drive/tf'),
+            ('/odom', '/diff_drive/odom')
+        ],
         condition=UnlessCondition(LaunchConfiguration('use_cpp'))
-    )
-
-    # 3. Spawners for ros2_control hardware interface
-    joint_state_broadcaster_spawner = Node(
-        package='controller_manager',
-        executable='spawner',
-        arguments=[
-            'joint_state_broadcaster',
-            '--controller-manager',
-            '/controller_manager',
-            '--unload-on-kill',
-        ],
-        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}],
-        output='screen'
-    )
-
-    joint_group_velocity_controller_spawner = Node(
-        package='controller_manager',
-        executable='spawner',
-        arguments=[
-            'joint_group_velocity_controller',
-            '--controller-manager',
-            '/controller_manager',
-            '--unload-on-kill',
-        ],
-        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}],
-        output='screen'
     )
 
     return LaunchDescription([
         use_cpp_arg,
         use_sim_time_arg,
         params_file_arg,
-        joint_state_broadcaster_spawner,
-        joint_group_velocity_controller_spawner,
         cpp_controller_node,
         py_controller_node
     ])

@@ -28,12 +28,12 @@ DiffDriveControllerCpp::DiffDriveControllerCpp()
   // 1. Declare and Read ROS 2 Parameters
   // -------------------------------------------------------------------------
   this->declare_parameter<double>("wheel_radius", 0.05);         // meters
-  this->declare_parameter<double>("wheel_separation", 0.34);     // meters (track width)
+  this->declare_parameter<double>("wheel_separation", 0.457);    // meters (track width calibrated)
   this->declare_parameter<double>("publish_rate", 50.0);         // Hz
   this->declare_parameter<std::string>("odom_frame_id", "odom");
   this->declare_parameter<std::string>("base_frame_id", "base_footprint");
   this->declare_parameter<int>("encoder_cpr", 330);
-  this->declare_parameter<bool>("publish_joint_states", true);
+  this->declare_parameter<bool>("publish_joint_states", false);
   this->declare_parameter<double>("cmd_vel_timeout", 0.5);
 
   r_ = this->get_parameter("wheel_radius").as_double();
@@ -66,6 +66,10 @@ DiffDriveControllerCpp::DiffDriveControllerCpp()
   has_prev_ticks_ = false;
   prev_left_ticks_ = 0;
   prev_right_ticks_ = 0;
+  has_joint_feedback_ = false;
+  has_prev_joint_pos_ = false;
+  prev_left_joint_pos_ = 0.0;
+  prev_right_joint_pos_ = 0.0;
   delta_s_left_ = 0.0;
   delta_s_right_ = 0.0;
 
@@ -80,6 +84,10 @@ DiffDriveControllerCpp::DiffDriveControllerCpp()
   encoder_sub_ = this->create_subscription<std_msgs::msg::Int32MultiArray>(
     "/wheel_encoder_ticks", 10,
     std::bind(&DiffDriveControllerCpp::encoderCallback, this, std::placeholders::_1));
+
+  joint_state_sub_ = this->create_subscription<sensor_msgs::msg::JointState>(
+    "/joint_states", 10,
+    std::bind(&DiffDriveControllerCpp::jointStateCallback, this, std::placeholders::_1));
 
   odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("/odom", 10);
   joint_state_pub_ = this->create_publisher<sensor_msgs::msg::JointState>("/joint_states", 10);
@@ -97,7 +105,7 @@ DiffDriveControllerCpp::DiffDriveControllerCpp()
     std::bind(&DiffDriveControllerCpp::updateLoop, this));
 
   RCLCPP_INFO(this->get_logger(), "============================================================");
-  RCLCPP_INFO(this->get_logger(), "🚀 C++ Diff Drive Controller Initialized");
+  RCLCPP_INFO(this->get_logger(), "🟢 [ACTIVE] C++ Diff Drive Kinematics Controller Activated!");
   RCLCPP_INFO(this->get_logger(), "   Wheel Radius:     %.3f m", r_);
   RCLCPP_INFO(this->get_logger(), "   Wheel Separation: %.3f m", L_);
   RCLCPP_INFO(this->get_logger(), "   Update Frequency: %.1f Hz", rate_);
@@ -158,6 +166,35 @@ void DiffDriveControllerCpp::encoderCallback(const std_msgs::msg::Int32MultiArra
   prev_left_ticks_ = left_ticks;
   prev_right_ticks_ = right_ticks;
   has_prev_ticks_ = true;
+}
+
+void DiffDriveControllerCpp::jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr msg)
+{
+  double left_pos = 0.0;
+  double right_pos = 0.0;
+  bool found_left = false;
+  bool found_right = false;
+
+  for (size_t i = 0; i < msg->name.size(); ++i) {
+    if (msg->name[i] == "front_left_wheel_joint" || msg->name[i] == "rear_left_wheel_joint") {
+      left_pos = msg->position[i];
+      found_left = true;
+    } else if (msg->name[i] == "front_right_wheel_joint" || msg->name[i] == "rear_right_wheel_joint") {
+      right_pos = msg->position[i];
+      found_right = true;
+    }
+  }
+
+  if (found_left && found_right) {
+    if (has_prev_joint_pos_) {
+      delta_s_left_ += (left_pos - prev_left_joint_pos_) * r_;
+      delta_s_right_ += (right_pos - prev_right_joint_pos_) * r_;
+      has_joint_feedback_ = true;
+    }
+    prev_left_joint_pos_ = left_pos;
+    prev_right_joint_pos_ = right_pos;
+    has_prev_joint_pos_ = true;
+  }
 }
 
 void DiffDriveControllerCpp::updateLoop()

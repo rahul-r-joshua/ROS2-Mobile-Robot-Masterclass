@@ -1,7 +1,7 @@
 /**:
   ros__parameters:
     wheel_radius: 0.05         # Wheel radius in meters (5 cm)
-    wheel_separation: 0.34     # Distance between left and right wheels in meters (34 cm)
+    wheel_separation: 0.457    # Calibrated kinematic wheel separation for 4WD skid-steer (Ref 1 tuned)
     publish_rate: 50.0         # Controller update frequency in Hz (synced to 50 Hz Gazebo physics)
     cmd_vel_timeout: 0.5       # Auto-stop watchdog timeout in seconds
     odom_frame_id: "odom"      # Odometry parent frame

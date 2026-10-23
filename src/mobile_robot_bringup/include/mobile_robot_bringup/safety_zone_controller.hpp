@@ -37,6 +37,7 @@ private:
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr sub_cmd_raw_;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr sub_joy_vel_;
   rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr sub_safety_stop_;
+  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr sub_safety_enable_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr pub_cmd_safe_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pub_markers_;
   rclcpp::TimerBase::SharedPtr timer_;
@@ -55,6 +56,7 @@ private:
   rclcpp::Time last_cmd_time_;
   bool manual_safety_active_{false};
   bool has_fresh_raw_cmd_{false};
+  bool safety_zone_enabled_{true};
 };
 
 }  // namespace mobile_robot_bringup

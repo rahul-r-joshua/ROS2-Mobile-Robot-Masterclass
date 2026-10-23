@@ -33,10 +33,11 @@ import threading
 import subprocess
 import time
 
+WS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 # Automatically source and inject workspace install environment
 def ensure_environment():
-    ws_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    setup_file = os.path.join(ws_dir, "install", "setup.bash")
+    setup_file = os.path.join(WS_DIR, "install", "setup.bash")
     if os.path.exists(setup_file):
         cmd = f"source /opt/ros/humble/setup.bash 2>/dev/null && source {setup_file} 2>/dev/null && env"
         proc = subprocess.run(["bash", "-c", cmd], stdout=subprocess.PIPE, text=True)
@@ -58,7 +59,10 @@ from std_msgs.msg import Float32MultiArray, Int32MultiArray, Bool
 
 
 def run_clean():
-    subprocess.run(["bash", "/home/ajay/ros2_mobile_robot_ws/clean_simulation.sh"],
+    clean_sh = os.path.join(WS_DIR, "scripts", "clean_simulation.sh")
+    if not os.path.exists(clean_sh):
+        clean_sh = os.path.join(WS_DIR, "clean_simulation.sh")
+    subprocess.run(["bash", clean_sh],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(0.3)
 
@@ -69,7 +73,8 @@ def run_clean():
 
 def test_milestone_1():
     print("  [M1] Checking 3D URDF & Robot Description...")
-    p = subprocess.run(["xacro", "/home/ajay/ros2_mobile_robot_ws/src/mobile_robot_description/urdf/mobile_robot.urdf.xacro"],
+    urdf_path = os.path.join(WS_DIR, "src", "mobile_robot_description", "urdf", "mobile_robot.urdf.xacro")
+    p = subprocess.run(["xacro", urdf_path],
                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     return p.returncode == 0 and "<robot" in p.stdout and "base_footprint" in p.stdout
 
@@ -434,7 +439,8 @@ def test_sim_combination(sim_type, controller_type, safety_type):
     procs = []
     try:
         if controller_type == 'ros2_control':
-            p_x = subprocess.run(["xacro", "/home/ajay/ros2_mobile_robot_ws/src/mobile_robot_description/urdf/ros2_control.xacro"],
+            ros2_ctrl_xacro = os.path.join(WS_DIR, "src", "mobile_robot_description", "urdf", "ros2_control.xacro")
+            p_x = subprocess.run(["xacro", ros2_ctrl_xacro],
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             if p_x.returncode != 0:
                 return False

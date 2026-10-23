@@ -39,12 +39,12 @@ class DiffDriveController(Node):
         # 1. Declare and Read ROS 2 Parameters
         # ---------------------------------------------------------------------
         self.declare_parameter('wheel_radius', 0.05)         # meters
-        self.declare_parameter('wheel_separation', 0.34)     # meters (track width)
-        self.declare_parameter('publish_rate', 30.0)         # Hz
+        self.declare_parameter('wheel_separation', 0.457)    # meters (track width calibrated)
+        self.declare_parameter('publish_rate', 50.0)         # Hz
         self.declare_parameter('odom_frame_id', 'odom')
         self.declare_parameter('base_frame_id', 'base_footprint')
         self.declare_parameter('encoder_cpr', 330)           # Counts per rev
-        self.declare_parameter('publish_joint_states', True)
+        self.declare_parameter('publish_joint_states', False)
 
         self.r = self.get_parameter('wheel_radius').get_parameter_value().double_value
         self.L = self.get_parameter('wheel_separation').get_parameter_value().double_value
@@ -56,10 +56,14 @@ class DiffDriveController(Node):
         self.declare_parameter('cmd_vel_timeout', 0.5)
         self.cmd_vel_timeout = self.get_parameter('cmd_vel_timeout').get_parameter_value().double_value
 
-        # Encoder tracking
+        # Encoder & Joint Feedback tracking
         self.has_encoder_data = False
         self.prev_left_ticks = None
         self.prev_right_ticks = None
+        self.has_joint_feedback = False
+        self.has_prev_joint_pos = False
+        self.prev_left_joint_pos = 0.0
+        self.prev_right_joint_pos = 0.0
         self.delta_s_left = 0.0
         self.delta_s_right = 0.0
 
@@ -116,6 +120,14 @@ class DiffDriveController(Node):
             10
         )
 
+        # Subscribe to /joint_states for closed-loop odometry in simulation
+        self.joint_state_sub = self.create_subscription(
+            JointState,
+            '/joint_states',
+            self.joint_state_callback,
+            10
+        )
+
         # Publish Odometry for navigation algorithms (SLAM / Nav2)
         self.odom_pub = self.create_publisher(Odometry, '/odom', 10)
 
@@ -132,7 +144,7 @@ class DiffDriveController(Node):
         self.timer = self.create_timer(1.0 / self.rate, self.update_loop)
 
         self.get_logger().info('=' * 60)
-        self.get_logger().info('🚀 Python Diff Drive Controller Initialized')
+        self.get_logger().info('🟢 [ACTIVE] Python Diff Drive Kinematics Controller Activated!')
         self.get_logger().info(f'   Wheel Radius:     {self.r} m')
         self.get_logger().info(f'   Wheel Separation: {self.L} m')
         self.get_logger().info(f'   Update Frequency: {self.rate} Hz')
@@ -192,6 +204,26 @@ class DiffDriveController(Node):
         self.prev_left_ticks = left_ticks
         self.prev_right_ticks = right_ticks
 
+    def joint_state_callback(self, msg: JointState):
+        """Processes Gazebo/simulation joint states for closed-loop odometry."""
+        left_pos = None
+        right_pos = None
+
+        for name, pos in zip(msg.name, msg.position):
+            if name in ('front_left_wheel_joint', 'rear_left_wheel_joint'):
+                left_pos = pos
+            elif name in ('front_right_wheel_joint', 'rear_right_wheel_joint'):
+                right_pos = pos
+
+        if left_pos is not None and right_pos is not None:
+            if self.has_prev_joint_pos:
+                self.delta_s_left += (left_pos - self.prev_left_joint_pos) * self.r
+                self.delta_s_right += (right_pos - self.prev_right_joint_pos) * self.r
+                self.has_joint_feedback = True
+            self.prev_left_joint_pos = left_pos
+            self.prev_right_joint_pos = right_pos
+            self.has_prev_joint_pos = True
+
     def update_loop(self):
         """Periodic loop: updates odometry, publishes wheel commands and TF."""
         current_time = self.get_clock().now()
@@ -226,7 +258,7 @@ class DiffDriveController(Node):
 
         # ---------------------------------------------------------------------
         # FORWARD KINEMATICS & POSE INTEGRATION:
-        # If real encoder data is available, compute displacement from encoders.
+        # If encoder data is available, compute displacement from encoders.
         # Otherwise, fall back to velocity command dead-reckoning.
         # ---------------------------------------------------------------------
         if self.has_encoder_data and (abs(self.delta_s_left) > 1e-6 or abs(self.delta_s_right) > 1e-6):

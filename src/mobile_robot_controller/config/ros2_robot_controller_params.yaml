@@ -33,7 +33,7 @@ diff_drive_controller:
     wheel_separation: 0.34
     wheel_radius: 0.05
 
-    wheel_separation_multiplier: 1.0
+    wheel_separation_multiplier: 1.119
     left_wheel_radius_multiplier: 1.0
     right_wheel_radius_multiplier: 1.0
 

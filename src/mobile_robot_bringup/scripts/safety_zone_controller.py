@@ -56,12 +56,13 @@ class SafetyZoneController(Node):
 
         # State
         self.min_obstacle_distance = float('inf')
-        self.zone_state = "GREEN"  # "GREEN", "YELLOW", "RED"
+        self.zone_state = "UNKNOWN"  # "UNKNOWN", "GREEN", "YELLOW", "RED"
         self.raw_cmd = Twist()
         self.last_cmd_time = self.get_clock().now()
 
         self.manual_safety_active = False
         self.has_fresh_raw_cmd = False
+        self.safety_zone_enabled = True
 
         # Raw command from Twist Mux or Joystick
         self.sub_cmd_raw = self.create_subscription(
@@ -85,6 +86,14 @@ class SafetyZoneController(Node):
             10
         )
 
+        # Safety zone dynamic enable/disable toggle
+        self.sub_safety_enable = self.create_subscription(
+            Bool,
+            '/safety_zone_enable',
+            self.safety_enable_callback,
+            10
+        )
+
         # LiDAR scan (SensorDataQoS for compatibility with both Gazebo and physical hardware)
         self.sub_scan = self.create_subscription(
             LaserScan,
@@ -99,8 +108,8 @@ class SafetyZoneController(Node):
         # Clean zone boundary circles for RViz
         self.pub_markers = self.create_publisher(MarkerArray, '/safety_zone_markers', 10)
 
-        # Control loop at 30 Hz
-        self.timer = self.create_timer(1.0 / 30.0, self.control_loop)
+        # Control loop at 20 Hz
+        self.timer = self.create_timer(1.0 / 20.0, self.control_loop)
 
         self.get_logger().info('=' * 60)
         self.get_logger().info('🛡️  Safety Zone Controller Initialized')
@@ -108,6 +117,14 @@ class SafetyZoneController(Node):
         self.get_logger().info(f'   🟡 Yellow Zone (2x Robot Size): {self.yellow_dist:.2f} m  -> 2x SLOWDOWN')
         self.get_logger().info(f'   🟢 Green Zone:                  > {self.yellow_dist:.2f} m -> FULL SPEED (Auto-Resume)')
         self.get_logger().info('=' * 60)
+
+    def safety_enable_callback(self, msg: Bool):
+        if msg.data != self.safety_zone_enabled:
+            self.safety_zone_enabled = msg.data
+            if self.safety_zone_enabled:
+                self.get_logger().info('🛡️  Safety Zone ENABLED: Collision avoidance active.')
+            else:
+                self.get_logger().warn('⚠️  Safety Zone DISABLED: Bypass mode active (100% speed pass-through).')
 
     def scan_callback(self, msg: LaserScan):
         """Measures closest obstacle in forward field of view relative to robot base."""
@@ -133,23 +150,14 @@ class SafetyZoneController(Node):
         else:
             self.min_obstacle_distance = float('inf')
 
-        # Automatically determine active zone
-        if self.min_obstacle_distance <= self.red_dist:
-            self.zone_state = "RED"
-        elif self.min_obstacle_distance <= self.yellow_dist:
-            self.zone_state = "YELLOW"
-        else:
-            self.zone_state = "GREEN"
-
     def safety_stop_callback(self, msg: Bool):
-        if msg.data:
-            self.manual_safety_active = True
+        if msg.data != self.manual_safety_active:
+            self.manual_safety_active = msg.data
             self.has_fresh_raw_cmd = False
-            self.get_logger().warn('🛑 Safety ACTIVE (/safety_stop: true) -> Robot stopped & movement blocked!')
-        else:
-            self.manual_safety_active = False
-            self.has_fresh_raw_cmd = False
-            self.get_logger().info('🟢 Safety INACTIVE (/safety_stop: false) -> Movement unlocked. Waiting for fresh /cmd_vel_raw.')
+            if self.manual_safety_active:
+                self.get_logger().warn('🛑 Safety ACTIVE (/safety_stop: true) -> Robot stopped & movement blocked!')
+            else:
+                self.get_logger().info('🟢 Safety INACTIVE (/safety_stop: false) -> Movement unlocked. Waiting for fresh /cmd_vel_raw.')
 
     def cmd_raw_callback(self, msg: Twist):
         self.raw_cmd = msg
@@ -157,6 +165,23 @@ class SafetyZoneController(Node):
         self.has_fresh_raw_cmd = True
 
     def control_loop(self):
+        # 1. Evaluate safety zone state and log ONLY on genuine state change
+        previous_state = self.zone_state
+        if self.min_obstacle_distance <= self.red_dist:
+            self.zone_state = "RED"
+        elif self.min_obstacle_distance <= self.yellow_dist:
+            self.zone_state = "YELLOW"
+        else:
+            self.zone_state = "GREEN"
+
+        if self.zone_state != previous_state:
+            if self.zone_state == "RED":
+                self.get_logger().warn(f'🔴 RED ZONE: Obstacle at {self.min_obstacle_distance:.2f} m -> EMERGENCY STOP ACTIVATED!')
+            elif self.zone_state == "YELLOW":
+                self.get_logger().info(f'🟡 YELLOW ZONE: Obstacle at {self.min_obstacle_distance:.2f} m -> Velocity moderated by 2x.')
+            else:
+                self.get_logger().info(f'🟢 GREEN ZONE: Path Clear ({self.min_obstacle_distance:.2f} m) -> Full speed restored.')
+
         safe_cmd = Twist()
 
         if self.manual_safety_active or not self.has_fresh_raw_cmd:
@@ -167,15 +192,13 @@ class SafetyZoneController(Node):
             # 1. Command Timeout Watchdog: if no command received for > 0.5s, clear command
             cmd_age = (self.get_clock().now() - self.last_cmd_time).nanoseconds * 1e-9
             if cmd_age <= 0.5:
-                if self.zone_state == "RED":
-                    # Red Zone: Obstacle is within 1x robot size -> FULL STOP
-                    # Prevent moving forward into obstacle; allow reversing away
-                    if self.raw_cmd.linear.x > 0.0:
-                        safe_cmd.linear.x = 0.0
-                        safe_cmd.angular.z = 0.0
-                    else:
-                        safe_cmd.linear.x = self.raw_cmd.linear.x * self.slowdown
-                        safe_cmd.angular.z = self.raw_cmd.angular.z * self.slowdown
+                if not self.safety_zone_enabled:
+                    # Bypass mode: pass-through at 100% full speed
+                    safe_cmd = self.raw_cmd
+                elif self.zone_state == "RED":
+                    # Red Zone: FULL EMERGENCY STOP (Zero linear & zero angular motion)
+                    safe_cmd.linear.x = 0.0
+                    safe_cmd.angular.z = 0.0
                 elif self.zone_state == "YELLOW":
                     # Yellow Zone: Obstacle is within 2x robot size -> 2x SLOWDOWN
                     safe_cmd.linear.x = self.raw_cmd.linear.x * self.slowdown

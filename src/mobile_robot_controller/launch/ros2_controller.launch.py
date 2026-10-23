@@ -35,7 +35,6 @@ def generate_launch_description():
             'joint_state_broadcaster',
             '--controller-manager',
             '/controller_manager',
-            '--unload-on-kill',
         ],
         parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}],
         output='screen'
@@ -48,7 +47,6 @@ def generate_launch_description():
             'diff_drive_controller',
             '--controller-manager',
             '/controller_manager',
-            '--unload-on-kill',
         ],
         parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}],
         output='screen'

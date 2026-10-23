@@ -306,6 +306,15 @@
     <origin xyz="0.20 0.0 0.05" rpy="0 0 0"/>
   </joint>
 
+  <!-- Standard ROS Camera Optical Frame (Z forward, X right, Y down) -->
+  <link name="camera_optical_link"/>
+
+  <joint name="camera_optical_joint" type="fixed">
+    <parent link="camera_link"/>
+    <child link="camera_optical_link"/>
+    <origin xyz="0 0 0" rpy="${-PI/2} 0 ${-PI/2}"/>
+  </joint>
+
   <!-- 7C. IMU Sensor Link (MPU6050 / BNO055 Breakout Board) -->
   <link name="imu_link">
     <!-- PCB Substrate -->

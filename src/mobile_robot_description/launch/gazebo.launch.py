@@ -22,8 +22,22 @@ def generate_launch_description():
 
     use_ros2_control_arg = DeclareLaunchArgument(
         name='use_ros2_control',
-        default_value='true',
+        default_value='false',
         description='Enable ros2_control plugin (true) or classic diff_drive plugin (false)'
+    )
+
+    default_world = os.path.join(pkg_desc, 'worlds', 'empty.world')
+
+    world_arg = DeclareLaunchArgument(
+        name='world',
+        default_value=default_world,
+        description='Full path to Gazebo world file'
+    )
+
+    gui_arg = DeclareLaunchArgument(
+        name='gui',
+        default_value='true',
+        description='Set to false to run gzserver only in headless mode'
     )
 
     # Robot Description
@@ -46,11 +60,15 @@ def generate_launch_description():
         }]
     )
 
-    # 2. Gazebo Server & Client (empty world)
+    # 2. Gazebo Server & Client
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(pkg_gazebo_ros, 'launch', 'gazebo.launch.py')
-        )
+        ),
+        launch_arguments={
+            'world': LaunchConfiguration('world'),
+            'gui': LaunchConfiguration('gui')
+        }.items()
     )
 
     # 3. Spawn Robot in Gazebo
@@ -68,6 +86,8 @@ def generate_launch_description():
     return LaunchDescription([
         model_arg,
         use_ros2_control_arg,
+        world_arg,
+        gui_arg,
         robot_state_publisher_node,
         gazebo,
         spawn_entity

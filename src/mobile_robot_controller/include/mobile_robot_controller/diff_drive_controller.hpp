@@ -38,6 +38,7 @@ public:
 private:
   void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
   void encoderCallback(const std_msgs::msg::Int32MultiArray::SharedPtr msg);
+  void jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr msg);
   void updateLoop();
 
   // Physical Parameters
@@ -65,17 +66,22 @@ private:
   bool has_cmd_vel_;
   int stop_count_;
 
-  // Encoder Tracking
+  // Encoder & Joint Tracking
   bool has_encoder_data_;
   bool has_prev_ticks_;
   int32_t prev_left_ticks_;
   int32_t prev_right_ticks_;
+  bool has_joint_feedback_;
+  bool has_prev_joint_pos_;
+  double prev_left_joint_pos_;
+  double prev_right_joint_pos_;
   double delta_s_left_;
   double delta_s_right_;
 
   // ROS 2 Interfaces
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_sub_;
   rclcpp::Subscription<std_msgs::msg::Int32MultiArray>::SharedPtr encoder_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_state_sub_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
   rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_pub_;
